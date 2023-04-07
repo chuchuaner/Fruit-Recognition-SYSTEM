@@ -34,3 +34,5 @@ while True:
         print(com_input)
 
 ser.close()
+print("end")
+#手动控制
