@@ -30,12 +30,12 @@ class armControl():
                 self.currentPinOfLead = int(key.char)
                 print("当前引脚已设置为：", self.currentPinOfLead)
             elif key == keyboard.Key.up:                    #按下键盘上
-                if self.controlCount[self.currentPinOfLead]*self.perAngle <= 180-self.perAngle:
+                if self.controlCount[self.currentPinOfLead]*self.perAngle < 180:
                     self.controlCount[self.currentPinOfLead] += 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
             elif key == keyboard.Key.down:                  #按键向下
-                if self.controlCount[self.currentPinOfLead] != 0:
+                if self.controlCount[self.currentPinOfLead] > 0:
                     self.controlCount[self.currentPinOfLead] -= 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
