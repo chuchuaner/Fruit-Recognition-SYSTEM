@@ -30,12 +30,12 @@ class armControl():
                 self.currentPinOfLead = int(key.char)
                 print("当前引脚已设置为：", self.currentPinOfLead)
             elif key == keyboard.Key.up:
-                if self.controlCount[self.currentPinOfLead]*self.perAngle <= 180-self.perAngle:
+                if self.controlCount[self.currentPinOfLead]*self.perAngle < 180:
                     self.controlCount[self.currentPinOfLead] += 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
             elif key == keyboard.Key.down:
-                if self.controlCount[self.currentPinOfLead] != 0:
+                if self.controlCount[self.currentPinOfLead] > 0:
                     self.controlCount[self.currentPinOfLead] -= 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
@@ -61,12 +61,11 @@ class armControl():
         bytes.fromhex("ff 02 06 {}".format(self.angleToHex(self.perAngle * self.controlCount[6]))),
         bytes.fromhex("ff 02 07 {}".format(self.angleToHex(self.perAngle * self.controlCount[7]))),
         bytes.fromhex("ff 02 08 {}".format(self.angleToHex(self.perAngle * self.controlCount[8])))]
-        print("cmd",cmd)
         for i in range(len(cmd)):
             write_len = self.ser.write(cmd[i])
             print("数据 ", cmd[i])
             print("串口发出{}个字节。".format(write_len))
-            time.sleep(2)
+            time.sleep(1)
 
     def setArmAngleByKeyboard(self):
         angle = self.angleToHex(self.perAngle * self.controlCount[self.currentPinOfLead])
@@ -150,7 +149,7 @@ con1.initSerial("COM3")
 # 设置通过键盘按键控制机械臂，数字键设置引脚，up键增加角度，down键减小角度
 con1.controlArmsByKeyboard()
 # 设置机械臂每次转动的角度
-con1.setArmPerAngle(10)
+con1.setArmPerAngle(1)
 # 将04引脚对应的机械臂从0°转动到180°
 # con1.testArmAllAngle("04",1)
 
