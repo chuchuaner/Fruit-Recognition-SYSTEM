@@ -160,7 +160,7 @@ class armControl():
     def testArmAllAngle(self, leadOfPin, sleepTime):
         cmd = self.getLeadOfPinAllCmd(leadOfPin)
         for i in range(len(cmd)):
-            write_len = self.ser.write(cmd[i])
+            write_len = self.ser.write(bytes.fromhex(cmd[i]))
             print("数据 ", cmd[i])
             print("串口发出{}个字节。".format(write_len))
             time.sleep(sleepTime)
