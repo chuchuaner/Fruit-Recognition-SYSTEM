@@ -11,30 +11,30 @@ import threading
 class armControl():
     def __init__(self):
         # 生成一个16*2的二维数组，行数代表引脚编号，第一列表示up次数，第二列表示down次数
-        self.controlCount = np.zeros_like(np.arange(0,16))  #按键次数
-        self.currentPinOfLead = 4                           #当前引脚
-        self.perAngle = 10                                  #每次按下时变换角度
-        self.ser = None                                     #串口对象
+        self.controlCount = np.zeros_like(np.arange(0,16))
+        self.currentPinOfLead = 4
+        self.perAngle = 10
+        self.ser = None
 
-    def controlArmsByKeyboard(self):                        #按键监听线程
+    def controlArmsByKeyboard(self):
         t1 = threading.Thread(target=self.listenKeyboard)
         t1.start()
 
-    def setArmPerAngle(self, perAngle):                     #设置每次按下的角度
+    def setArmPerAngle(self, perAngle):
         self.perAngle = perAngle
 
-    def listenKeyboard(self):                               #按键监听
+    def listenKeyboard(self):
         def listenKey(key):
             print("当前key：", key)
-            if hasattr(key,"char") and key.char.isdigit():  #按下数字
+            if hasattr(key,"char") and key.char.isdigit():
                 self.currentPinOfLead = int(key.char)
                 print("当前引脚已设置为：", self.currentPinOfLead)
-            elif key == keyboard.Key.up:                    #按下键盘上
+            elif key == keyboard.Key.up:
                 if self.controlCount[self.currentPinOfLead]*self.perAngle < 180:
                     self.controlCount[self.currentPinOfLead] += 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
-            elif key == keyboard.Key.down:                  #按键向下
+            elif key == keyboard.Key.down:
                 if self.controlCount[self.currentPinOfLead] > 0:
                     self.controlCount[self.currentPinOfLead] -= 1
                 self.setArmAngleByKeyboard()
@@ -43,8 +43,39 @@ class armControl():
                 self.showAllKeyboardInfo()
             elif key == keyboard.Key.esc:
                 self.resetArmsAngle()
+            elif key == keyboard.Key.cmd:
+                self.armGet()
+            elif key == keyboard.Key.alt_l:
+                self.putFruit(70)
         with keyboard.Listener(on_press=listenKey) as listener:
             listener.join()
+
+
+    # 机械臂移动到抓取位置
+    def armGet(self):
+        cmd = [
+            bytes.fromhex("ff 02 04 {}".format(self.angleToHex(157))),
+            bytes.fromhex("ff 02 05 {}".format(self.angleToHex(122))),
+            bytes.fromhex("ff 02 06 {}".format(self.angleToHex(40))),
+            bytes.fromhex("ff 02 07 {}".format(self.angleToHex(165))),
+            bytes.fromhex("ff 02 08 {}".format(self.angleToHex(0))),
+        ]
+        for i in range(len(cmd)):
+            self.ser.write(cmd[i])
+            time.sleep(3.5)
+
+    # 输入水果的种类，放入不同的盘子
+    def putFruit(self,angleToP):
+        cmd = [
+            bytes.fromhex("ff 02 08 {}".format(self.angleToHex(70))),
+            bytes.fromhex("ff 02 05 {}".format(self.angleToHex(70))),
+            bytes.fromhex("ff 02 04 {}".format(self.angleToHex(angleToP))),
+            bytes.fromhex("ff 02 05 {}".format(self.angleToHex(122))),
+            bytes.fromhex("ff 02 08 {}".format(self.angleToHex(0))),
+        ]
+        for i in range(len(cmd)):
+            self.ser.write(cmd[i])
+            time.sleep(3.5)
 
     def showAllKeyboardInfo(self):
         for i in range(len(self.controlCount)):
@@ -56,16 +87,20 @@ class armControl():
         self.controlCount[6] = 90 // self.perAngle
         self.controlCount[7] = 90 // self.perAngle
         self.controlCount[8] = 0 // self.perAngle
-        cmd = [bytes.fromhex("ff 02 04 {}".format(self.angleToHex(self.perAngle * self.controlCount[4]))),
-        bytes.fromhex("ff 02 05 {}".format(self.angleToHex(self.perAngle * self.controlCount[5]))),
-        bytes.fromhex("ff 02 06 {}".format(self.angleToHex(self.perAngle * self.controlCount[6]))),
-        bytes.fromhex("ff 02 07 {}".format(self.angleToHex(self.perAngle * self.controlCount[7]))),
-        bytes.fromhex("ff 02 08 {}".format(self.angleToHex(self.perAngle * self.controlCount[8])))]
+        cmd = [
+        "ff 02 04 {}".format(self.angleToHex(self.controlCount[4]*self.perAngle)),
+        "ff 02 05 {}".format(self.angleToHex(self.controlCount[5]*self.perAngle)),
+        "ff 02 06 {}".format(self.angleToHex(self.controlCount[6]*self.perAngle)),
+        "ff 02 07 {}".format(self.angleToHex(self.controlCount[7]*self.perAngle)),
+        "ff 02 08 {}".format(self.angleToHex(self.controlCount[8]*self.perAngle)),
+            "ff 02 07 {}".format(self.angleToHex(self.controlCount[7] * self.perAngle)),
+               ]
+        print(cmd)
         for i in range(len(cmd)):
-            write_len = self.ser.write(cmd[i])
+            write_len = self.ser.write(bytes.fromhex(cmd[i]))
             print("数据 ", cmd[i])
             print("串口发出{}个字节。".format(write_len))
-            time.sleep(5)
+            time.sleep(3.5)
 
     def setArmAngleByKeyboard(self):
         angle = self.angleToHex(self.perAngle * self.controlCount[self.currentPinOfLead])
@@ -160,4 +195,3 @@ con1.setArmPerAngle(1)
 #         print(com_input)
 
 # ser.close()
-#测试
