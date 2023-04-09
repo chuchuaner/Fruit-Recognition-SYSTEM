@@ -30,7 +30,8 @@ class armControl():
                 self.currentPinOfLead = int(key.char)
                 print("当前引脚已设置为：", self.currentPinOfLead)
             elif key == keyboard.Key.up:
-                self.controlCount[self.currentPinOfLead] += 1
+                if self.controlCount[self.currentPinOfLead]*self.perAngle <= 180-self.perAngle:
+                    self.controlCount[self.currentPinOfLead] += 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
             elif key == keyboard.Key.down:
@@ -40,6 +41,8 @@ class armControl():
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
             elif key == keyboard.Key.tab:
                 self.showAllKeyboardInfo()
+            elif key == keyboard.Key.esc:
+                self.resetArmsAngle()
         with keyboard.Listener(on_press=listenKey) as listener:
             listener.join()
 
@@ -47,12 +50,30 @@ class armControl():
         for i in range(len(self.controlCount)):
             print("引脚{}：角度为{}".format(i, self.controlCount[i] * self.perAngle))
 
+    def resetArmsAngle(self):
+        self.controlCount[4] = 160//self.perAngle
+        self.controlCount[5] = 100//self.perAngle
+        self.controlCount[6] = 90 // self.perAngle
+        self.controlCount[7] = 90 // self.perAngle
+        self.controlCount[8] = 0 // self.perAngle
+        cmd = [bytes.fromhex("ff 02 04 {}".format(self.angleToHex(self.perAngle * self.controlCount[4]))),
+        bytes.fromhex("ff 02 05 {}".format(self.angleToHex(self.perAngle * self.controlCount[5]))),
+        bytes.fromhex("ff 02 06 {}".format(self.angleToHex(self.perAngle * self.controlCount[6]))),
+        bytes.fromhex("ff 02 07 {}".format(self.angleToHex(self.perAngle * self.controlCount[7]))),
+        bytes.fromhex("ff 02 08 {}".format(self.angleToHex(self.perAngle * self.controlCount[8])))]
+        print("cmd",cmd)
+        for i in range(len(cmd)):
+            write_len = self.ser.write(cmd[i])
+            print("数据 ", cmd[i])
+            print("串口发出{}个字节。".format(write_len))
+            time.sleep(2)
+
     def setArmAngleByKeyboard(self):
         angle = self.angleToHex(self.perAngle * self.controlCount[self.currentPinOfLead])
         l = str(self.currentPinOfLead)
         if len(l)==1:
             l = "0"+l
-        cmd = "ff 02 {} {}".format(l,angle)
+        cmd = bytes.fromhex("ff 02 {} {}".format(l,angle))
         write_len = self.ser.write(cmd)
         print("数据 ", cmd)
         print("串口发出{}个字节。".format(write_len))
