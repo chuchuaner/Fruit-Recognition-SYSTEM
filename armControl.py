@@ -11,31 +11,31 @@ import threading
 class armControl():
     def __init__(self):
         # 生成一个16*2的二维数组，行数代表引脚编号，第一列表示up次数，第二列表示down次数
-        self.controlCount = np.zeros_like(np.arange(0,16))
-        self.currentPinOfLead = 4
-        self.perAngle = 10
-        self.ser = None
+        self.controlCount = np.zeros_like(np.arange(0,16))  #按键次数
+        self.currentPinOfLead = 4                           #当前引脚
+        self.perAngle = 10                                  #每次按下时变换角度
+        self.ser = None                                     #串口对象
 
-    def controlArmsByKeyboard(self):
+    def controlArmsByKeyboard(self):                        #按键监听线程
         t1 = threading.Thread(target=self.listenKeyboard)
         t1.start()
 
-    def setArmPerAngle(self, perAngle):
+    def setArmPerAngle(self, perAngle):                     #设置每次按下的角度
         self.perAngle = perAngle
 
-    def listenKeyboard(self):
+    def listenKeyboard(self):                               #按键监听
         def listenKey(key):
             print("当前key：", key)
-            if hasattr(key,"char") and key.char.isdigit():
+            if hasattr(key,"char") and key.char.isdigit():  #按下数字
                 self.currentPinOfLead = int(key.char)
                 print("当前引脚已设置为：", self.currentPinOfLead)
-            elif key == keyboard.Key.up:
-                if self.controlCount[self.currentPinOfLead]*self.perAngle < 180:
+            elif key == keyboard.Key.up:                    #按下键盘上
+                if self.controlCount[self.currentPinOfLead]*self.perAngle <= 180-self.perAngle:
                     self.controlCount[self.currentPinOfLead] += 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
-            elif key == keyboard.Key.down:
-                if self.controlCount[self.currentPinOfLead] > 0:
+            elif key == keyboard.Key.down:                  #按键向下
+                if self.controlCount[self.currentPinOfLead] != 0:
                     self.controlCount[self.currentPinOfLead] -= 1
                 self.setArmAngleByKeyboard()
                 print("引脚{}：角度为{}\n\n".format(self.currentPinOfLead,self.controlCount[self.currentPinOfLead]*self.perAngle))
@@ -65,7 +65,7 @@ class armControl():
             write_len = self.ser.write(cmd[i])
             print("数据 ", cmd[i])
             print("串口发出{}个字节。".format(write_len))
-            time.sleep(1)
+            time.sleep(5)
 
     def setArmAngleByKeyboard(self):
         angle = self.angleToHex(self.perAngle * self.controlCount[self.currentPinOfLead])
@@ -160,3 +160,4 @@ con1.setArmPerAngle(1)
 #         print(com_input)
 
 # ser.close()
+#测试
