@@ -22,5 +22,7 @@ a = os.system(
         f"python ./yolov5-7.0/detect.py --weights ./Model/Fruits.pt --img 640 --source 0")
 # import tensorflow as tf
 # print(tf.test.is_gpu_available())
+# import tensorflow as tf
+# print(tf.test.is_gpu_available())
 import torch
 print(torch.cuda.is_available())

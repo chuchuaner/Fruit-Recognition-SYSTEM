@@ -31,8 +31,22 @@ import os
 import platform
 import sys
 from pathlib import Path
-
+import time
 import torch
+
+
+from segment.arm import *
+
+# 实例化armControl类
+con1 = armControl()
+# 初始化串口通信设备为COM3
+con1.initSerial("COM5")
+# 设置通过键盘按键控制机械臂，数字键设置引脚，up键增加角度，down键减小角度
+con1.controlArmsByKeyboard()
+# 设置机械臂每次转动的角度
+con1.setArmPerAngle(1)
+
+# from segment.test import another_function
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -51,8 +65,7 @@ from utils.torch_utils import select_device, smart_inference_mode
 @smart_inference_mode()
 def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
-        # source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
-        source='1',
+        source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
         conf_thres=0.25,  # confidence threshold
@@ -170,8 +183,34 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                    if save_crop:
-                        save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+                    # if save_crop:
+                    #     save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+                    # x1 = int(xyxy[0].item())
+                    # y1 = int(xyxy[1].item())
+                    # x2 = int(xyxy[2].item())
+                    # y2 = int(xyxy[3].item())
+                    # class_index = cls  # 获取属性
+                    # object_name = names[int(cls)]
+                    # print('位置信息', x1, y1, x2, y2)  # 打印坐标
+                    # print('class index is',class_index.item())#打印属性，由于我们只有一个类，所以是0
+                    # print('object_names is',object_name)#打印标签名字，
+            # 获取类别名称
+            names = model.names
+            # 遍历每个检测结果
+            for i, det in enumerate(pred):
+                # 遍历每个检测框
+                for *xyxy, conf, cls in reversed(det):
+                    # 将预测的类别id转换为类别名称，并输出
+                    cls_name = names[int(cls)]
+            # 调用another_function函数并传递类别参数
+                    print("识别到的类别是：" + cls_name)
+                    global con1
+                    tt=function_name(cls_name)
+                    if tt<3:
+                        print("准备抓取:",cls_name)
+                        con1.armGet()
+                        print("正在放置:{}的第{}个".format(cls_name,con1.countFruitNumber[tt]))
+                        con1.putFruit(tt)
 
             # Stream results
             im0 = annotator.result()
@@ -218,8 +257,7 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
-    # parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
-    parser.add_argument('--source', type=str, default='1', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
@@ -259,3 +297,4 @@ def main(opt):
 if __name__ == "__main__":
     opt = parse_opt()
     main(opt)
+
